@@ -7,53 +7,34 @@ const cors = require("cors");
 app.use(cors());
 app.use(bodyParser.json());
 
-// async function countOnlineMembers() {
-//   const onlineMembers = await prisma.signUp.count({
-//     where: {
-//       loggedOut: { lt: prisma.signUp.createdAt },
-//     },
-//   });
-//   console.log("online", onlineMembers);
-// }
-// countOnlineMembers();
-// async function countOfflineMembers() {
-//   const offlineMembers = await prisma.signUp.count({
-//     where: {
-//       loggedOut: { gt: prisma.signUp.createdAt },
-//     },
-//   });
-//   console.log("offline", offlineMembers);
-// }
-// countOfflineMembers();
+const currentTime = new Date();
+console.log(currentTime);
+
 async function checkOnlineUsers() {
   const onlineUsers = await prisma.$queryRaw`
   SELECT *
   FROM SignUp
-  WHERE TIMESTAMPDIFF(HOUR, loggedOut, createdAt) < 1 AND  createdAt > loggedOut;
+  WHERE TIMESTAMPDIFF(HOUR, ${currentTime},createdAt) < 1 AND  createdAt > loggedOut;
 `;
-
-  console.log(onlineUsers);
+  return onlineUsers;
 }
-checkOnlineUsers();
 async function checkOfflineUsers() {
   const OfflineUsers = await prisma.$queryRaw`
   SELECT *
   FROM SignUp
   WHERE TIMESTAMPDIFF(HOUR, loggedOut, createdAt) < 1 AND  loggedOut > createdAt;
 `;
-  console.log(OfflineUsers);
+  return OfflineUsers;
 }
-checkOfflineUsers();
 async function checkAwayUsers() {
   const awayUsers = await prisma.$queryRaw`
   SELECT *
   FROM SignUp
-  WHERE TIMESTAMPDIFF(HOUR, loggedOut, createdAt) > 2 AND  createdAt > loggedOut;
+  WHERE TIMESTAMPDIFF(HOUR,${currentTime},createdAt) > 2 AND  createdAt > loggedOut;
 `;
 
-  console.log(awayUsers);
+  return awayUsers;
 }
-checkAwayUsers();
 app.post("/createUser", async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -61,7 +42,6 @@ app.post("/createUser", async (req, res) => {
       .status(400)
       .json({ error: "Name, email, and password are required" });
   }
-
   try {
     const existingUser = await prisma.SignUp.findUnique({
       where: { email },
@@ -115,6 +95,17 @@ app.post("/logout", async (req, res) => {
     res.json(updatedUser);
   } catch (error) {
     console.error("Error updating loggedOut:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.post("/checkUsers", async (req, res) => {
+  try {
+    const onlineUsers = await checkOnlineUsers();
+    const offlineUsers = await checkOfflineUsers();
+    const awayUsers = await checkAwayUsers();
+    res.json({ onlineUsers, offlineUsers, awayUsers });
+  } catch (error) {
+    console.error("Error checking users:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
