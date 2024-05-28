@@ -13,7 +13,7 @@ const LandingPage = () => {
       <main className="flex flex-col items-center mt-10">
         <div className="bg-white shadow rounded-lg p-8 w-full  text-center">
           <h2 className="text-2xl text-slate-900 font-bold mb-6">
-            Hello welcome to my worst landing page
+            Hello welcome to my worst landing Page
           </h2>
           <p className="text-gray-700 mb-6">
             Please login or sign up to continue.
